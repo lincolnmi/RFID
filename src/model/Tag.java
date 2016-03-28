@@ -6,6 +6,7 @@ package model;
 public class Tag {
     private String ID;
     private int num;
+    private int status;//0 - finished, 1 - join, 2 - silent temporarily
 
     public Tag(String ID) {
         this.ID = ID;
@@ -25,5 +26,13 @@ public class Tag {
 
     public int getNum() {
         return num;
+    }
+
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
+    public int getStatus() {
+        return status;
     }
 }
