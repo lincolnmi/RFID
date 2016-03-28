@@ -24,17 +24,18 @@ public class Helper {
     }
 
     public static HashMap<Integer,Set<Tag>> generateDistribution(ArrayList<Reader> readers,ArrayList<Tag> tags) {
-        int size = readers.size();
+        int reader_num = readers.size();
+        int tag_num = tags.size();
 
         HashMap<Integer,Set<Tag>> distribution = new HashMap<Integer, Set<Tag>>();
         for (Tag tag:tags) {
-            coverTags(distribution,tag,size);
+            coverTags(distribution,tag,reader_num);
         }
-        for (int i=0;i<size*0.5;i++) {
-            int index = rdm.nextInt(size);
+        for (int i=0;i<tag_num*0.8;i++) {
+            int index = rdm.nextInt(tag_num);
             Tag tag = tags.get(index);
-            int idx = rdm.nextInt(size)+1;
-            coverTags(distribution,tag,size);
+            int idx = rdm.nextInt(reader_num)+1;
+            coverTags(distribution,tag,reader_num);
         }
         return distribution;
     }
