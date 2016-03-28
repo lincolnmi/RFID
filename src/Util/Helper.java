@@ -9,8 +9,9 @@ import java.util.*;
  * Created by Jason on 2016/3/28.
  */
 public class Helper {
+    private static long seed = 2016;
 
-    private static Random rdm = new Random();
+    private static Random rdm = new Random(seed);
 
     public static String generateID() {
         StringBuilder str = new StringBuilder();
@@ -23,19 +24,17 @@ public class Helper {
         return str.toString();
     }
 
-    public static HashMap<Integer,Set<Tag>> generateDistribution(ArrayList<Reader> readers,ArrayList<Tag> tags) {
+    public static HashMap<Integer,Set<Tag>> generateDistribution(Set<Reader> readers,Set<Tag> tags) {
         int reader_num = readers.size();
         int tag_num = tags.size();
 
         HashMap<Integer,Set<Tag>> distribution = new HashMap<Integer, Set<Tag>>();
         for (Tag tag:tags) {
             coverTags(distribution,tag,reader_num);
-        }
-        for (int i=0;i<tag_num*0.8;i++) {
             int index = rdm.nextInt(tag_num);
-            Tag tag = tags.get(index);
-            int idx = rdm.nextInt(reader_num)+1;
-            coverTags(distribution,tag,reader_num);
+            if (index<=tag_num*0.8) {
+                coverTags(distribution,tag,reader_num);
+            }
         }
         return distribution;
     }
