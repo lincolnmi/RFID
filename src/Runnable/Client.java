@@ -5,6 +5,10 @@ import Util.Helper;
 import model.Reader;
 import model.Tag;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -12,8 +16,9 @@ import java.util.*;
  */
 public class Client {
 
-    private static final int tag_number = 10;
-    private static final int reader_number = 3;
+    private static int tag_number = 10;
+    private static int reader_number = 1;
+    private static final double e = Math.E;
 
     public static Set<Reader> initReader() {
         System.out.println("init readers");
@@ -33,9 +38,9 @@ public class Client {
             tag.setStatus(1);
             tags.add(tag);
         }
-        for (Tag tag : tags) {
+        /*for (Tag tag : tags) {
             System.out.println(tag.getID());
-        }
+        }*/
         return tags;
     }
 
@@ -53,7 +58,7 @@ public class Client {
     }
 
     public static HashMap<Integer,Integer> getTagMappedIndex(Set<Tag> tags,int frame,long seed) {
-        System.out.println("init map all tags index");
+        //System.out.println("init map all tags index");
         HashMap<Integer,Integer> mappedResults = new HashMap<Integer, Integer>();
         Random rdm = new Random(seed);
         for (Tag tag:tags) {
@@ -62,14 +67,14 @@ public class Client {
                 mappedResults.put(tag.getNum(), idx);
             }
         }
-        for (int key:mappedResults.keySet()) {
+        /*for (int key:mappedResults.keySet()) {
             System.out.println("Tag "+key + ":" + mappedResults.get(key));
-        }
+        }*/
         return mappedResults;
     }
 
     public static HashMap<Integer,Set<Tag>> mapTags(Set<Tag> tags,HashMap<Integer,Integer> mappedIndex) {
-        System.out.println("map tags");
+        //System.out.println("map tags");
         HashMap<Integer,Set<Tag>> mappedResults = new HashMap<Integer, Set<Tag>>();
         for (Tag tag:tags) {
             if (tag.getStatus()!=0) {
@@ -110,7 +115,7 @@ public class Client {
     public static HashMap<Integer,Set<Tag>> mapReaders(HashMap<Integer,Set<Tag>> distribution,HashMap<Integer,
             Set<Tag>> allMappedResults,HashMap<Integer,Integer> mappedIndex) {
         HashMap<Integer,Set<Tag>> allPredictTags = new HashMap<Integer, Set<Tag>>();
-        System.out.println("predict tags");
+        //System.out.println("predict tags");
         for (int key:distribution.keySet()) {
             Set<Tag> tags = distribution.get(key);
             HashMap<Integer,Set<Tag>> subMappedResults = mapTags(tags,mappedIndex);
@@ -153,24 +158,39 @@ public class Client {
         return expectedNumbers;
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        Set<Tag> tags = initTags();
-        Set<Reader> readers = initReader();
-        HashMap<Integer,Set<Tag>> distribution = initDistribution(readers,tags);
+    public static double EDFSA(HashMap<Integer,Set<Tag>> distribution) {
+        double time = 0;
+        for (int key:distribution.keySet()) {
+            int size = distribution.get(key).size();
+            time += e*size*2.4;
+        }
+        if (reader_number>4) {
+            time = time * 4 / reader_number;
+        }
+        return time;
+    }
+
+    public static double getAdjacentTagsTime(Set<Tag> tags,Set<Reader> readers,HashMap<Integer,Set<Tag>> distribution) {
         int expectedNumbers = getExpectedDistributionNumbers(distribution);
         int realityNumbers = 0,round = 1;
-        System.out.println("expectedNumbers: " + expectedNumbers);
-        HashMap<Integer,Set<Tag>> finalPredictTags = new HashMap<Integer, Set<Tag>>();
         double time = 0;
+        HashMap<Integer,Set<Tag>> finalPredictTags = new HashMap<Integer, Set<Tag>>();
         while (realityNumbers!=expectedNumbers) {
             System.out.println("round "+round);
-            HashMap<Integer,Integer> mappedIndex = getTagMappedIndex(tags,getNotIdentifiedTags(tags),round);
+            int frame = getNotIdentifiedTags(tags);
+            HashMap<Integer,Integer> mappedIndex = getTagMappedIndex(tags,frame,round);
             HashMap<Integer,Set<Tag>> allMappedResults = mapTags(tags,mappedIndex);
             HashMap<Integer,Set<Tag>> allPredictTags = mapReaders(distribution,allMappedResults,mappedIndex);
+            System.out.println(frame);
+            if (reader_number>4) {
+                time += frame*4*0.4;
+            } else {
+                time += frame*reader_number*0.4;
+            }
 
-            /*for (int key:mappedIndex.keySet()) {
+            for (int key:mappedIndex.keySet()) {
                 System.out.println(mappedIndex.get(key) + ":" +key);
-            }*/
+            }
             for (int key:allPredictTags.keySet()) {
                 for (Tag tag:allPredictTags.get(key)) {
                     tag.setStatus(0);
@@ -185,14 +205,35 @@ public class Client {
             }
 
             //output(distribution);
-            System.out.println("predict");
+            //System.out.println("predict");
             output(allPredictTags);
-            System.out.println("total identified tags: " + realityNumbers);
+            //System.out.println("total identified tags: " + realityNumbers);
             round++;
-            Thread.sleep(1000);
+            //Thread.sleep(1000);
         }
-        System.out.println("final predict tags:");
-        output(finalPredictTags);
+        System.out.println("final predict tags takes "+(round-1)+" rounds which costs "+ time +"ms");
+        return time;
+    }
+
+    public static void main(String[] args) throws InterruptedException, IOException {
+        File file = new File("time.txt");
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+        for (int i=3;i<=3;i++) {
+            reader_number = i;
+            Set<Tag> tags = initTags();
+            Set<Reader> readers = initReader();
+            HashMap<Integer,Set<Tag>> distribution = initDistribution(readers,tags);
+            double time = getAdjacentTagsTime(tags,readers,distribution);
+            double edfsa = EDFSA(distribution);
+            System.out.println((int)time*1.0/1000+"s "+(int)edfsa*1.0/1000+"s");
+            bw.write((int)time*1.0/1000+" "+(int)edfsa*1.0/1000+"\n");
+        }
+        bw.flush();
+        bw.close();
+        //output(finalPredictTags);
     }
 
 }
