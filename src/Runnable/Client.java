@@ -51,10 +51,10 @@ public class Client {
         return distribution;
     }
 
-    public static HashMap<Integer,Integer> getTagMappedIndex(Set<Tag> tags,int frame) {
+    public static HashMap<Integer,Integer> getTagMappedIndex(Set<Tag> tags,int frame,long seed) {
         System.out.println("init map all tags index");
         HashMap<Integer,Integer> mappedResults = new HashMap<Integer, Integer>();
-        Random rdm = new Random();
+        Random rdm = new Random(seed);
         for (Tag tag:tags) {
             int idx = rdm.nextInt(frame);
             mappedResults.put(tag.getNum(),idx);
@@ -129,9 +129,12 @@ public class Client {
         Set<Tag> tags = initTags();
         Set<Reader> readers = initReader();
         HashMap<Integer,Set<Tag>> distribution = initDistribution(readers,tags);
-        HashMap<Integer,Integer> mappedIndex = getTagMappedIndex(tags, tag_number);
+        HashMap<Integer,Integer> mappedIndex = getTagMappedIndex(tags, tag_number,2015);
         HashMap<Integer,Set<Tag>> allMappedResults = mapTags(tags,mappedIndex);
         HashMap<Integer,Set<Tag>> allPredictTags = mapReaders(distribution,allMappedResults,mappedIndex);
+        for (int key:mappedIndex.keySet()) {
+            System.out.println(mappedIndex.get(key) + ":" +key);
+        }
         System.out.println("expected");
         output(distribution);
         System.out.println("predict");
